@@ -100,10 +100,8 @@ if prompt := st.chat_input():
     data=analysis_data.to_string()
     handler = StreamHandler(st.empty())
     st.dataframe(analysis_data)
-    # try:
-    memory=st.session_state["memory"]
-    call_llm(question=prompt,city=city,data=data,province=province,memory=memory)
-        
-    # except Exception as e:
-    #     logging.error(e.__str__())
-    #     st.error("Internal application error, please retry or contact the administrator at 1095046934@qq.com.")
+    try:
+        memory=st.session_state["memory"]
+        call_llm(question=prompt,city=city,data=data,province=province,memory=memory)        
+    except Exception as e:
+        st.error(e.__str__())
