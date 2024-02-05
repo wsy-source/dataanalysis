@@ -59,10 +59,13 @@ with st.sidebar:
 
     new_dataframe=dataframe[(dataframe["Province"]==province)&(dataframe["City"]==city)].replace(" ", np.nan)
     date=new_dataframe["date"].drop_duplicates().dropna().values.tolist()
+        
     date = [int(d) for d in date]
     date=sorted(date)
-    end_date=st.selectbox("To",date,index=5)
-    
+    if len(date) >5:
+        end_date=st.selectbox("To",date,index=5)
+    else:
+        end_date=st.selectbox("To",date)
 
 analysis_data=dataframe[(dataframe["Province"]==province) & (dataframe["City"]==city) &((dataframe["date"]>=start_date)&(dataframe["date"]<=end_date))]
 analysis_data = analysis_data.sort_values(by='date', ascending=False)
