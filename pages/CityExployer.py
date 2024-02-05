@@ -104,4 +104,4 @@ if prompt := st.chat_input():
         memory=st.session_state["memory"]
         call_llm(question=prompt,city=city,data=data,province=province,memory=memory)        
     except Exception as e:
-        st.error(e.__str__())
+        st.error("The token exceeds the maximum token supported by the model. Please reduce data input.")
