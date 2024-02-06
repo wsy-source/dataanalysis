@@ -15,7 +15,8 @@ prompt="""
   answer in chinese
 
   user question: {question}
-
+  
+  current data: 
   province: {province} city: {city} sales data 
   data: {data}
 
