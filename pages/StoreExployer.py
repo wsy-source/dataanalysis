@@ -11,16 +11,13 @@ from langchain.memory import ConversationBufferMemory
 from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
 prompt="""
-  As a regional sales manager for Goodyear,Need to answer user questions based on current regional sales data and chat history User questions must be answered
+  As a store sales manager for Goodyear,Need to answer user questions based on current regional sales data 
   answer in chinese
 
   user question: {question}
 
   province: {province} city: {city} sales data 
   data: {data}
-
-  current conversation history:
-  {history}
 """
 
 PROMPT=PromptTemplate.from_template(prompt)
@@ -60,11 +57,11 @@ with st.sidebar:
 analysis_data=dataframe[(dataframe["Customer Number"]==customer)]
 analysis_data = analysis_data.sort_values(by='date', ascending=False)
 
-def call_llm(province,city,data,question,memory):
+def call_llm(province,city,data,question):
     llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,
                           callbacks=[handler])
     
-    chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
+    chain=LLMChain(llm=llm,prompt=PROMPT)
     chain.invoke(input={
         "province": province,
         "city":city,
