@@ -10,17 +10,19 @@ from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
-prompt="""
-  As a region sales manager for Goodyear,Need to answer user questions based on current regional sales data (According to topic and description column) and chat history
-  
 
+prompt="""
+  As a regional sales manager for Goodyear, you need to analyze the content discussed based on the visit data to analyze Analyze the topics and details discussed in the interview data to answer user questions.
+  Use customer number instead of data number
+  
+  The questions asked by users may not have direct answers（No need to repeat the statement）. 
+  You need to summarize them from the topics and detailed descriptions discussed in the interview data.
+  Just tell me the result of your answer
+  
   user question: {question}
   current data: 
   province: {province} city: {city} sales data 
   data: {data}
-
-  current conversation history:
-  {history}
 
   answer in {languague}
 """
@@ -57,10 +59,10 @@ with st.sidebar:
     }
 
     if languague=="English":
-        dataframe=pd.read_excel("demo_en.xlsx")
+        dataframe=pd.read_excel("demo_en.xlsx",dtype={"a": np.int32, "b": str},converters={'Customer Number':str})
         schema=schema_info["en"]
     else:
-        dataframe=pd.read_excel("demo_cn.xlsx")
+        dataframe=pd.read_excel("demo_cn.xlsx",dtype={"a": np.int32, "b": str},converters={'客户编号':str})
         schema=schema_info["cn"]
 
 
