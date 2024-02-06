@@ -11,17 +11,18 @@ from langchain.memory import ConversationBufferMemory
 from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
 prompt="""
-  As a region sales manager for Goodyear,Need to answer user questions based on current regional sales data (According to topic and description) and chat history User questions must be answered
-  answer in chinese
+  As a region sales manager for Goodyear,Need to answer user questions based on current regional sales data (According to topic and description column) and chat history
+  
 
   user question: {question}
-
   current data: 
   province: {province} city: {city} sales data 
   data: {data}
 
   current conversation history:
   {history}
+
+  answer in {languague}
 """
 
 PROMPT=PromptTemplate.from_template(prompt)
@@ -38,29 +39,52 @@ if "memory" not in st.session_state:
 province=""
 city=""
 
-dataframe=pd.read_excel("demo.xlsx")
-
+dataframe=None
 
 with st.sidebar:
-    new_dataframe=dataframe.replace(" ", np.nan)  
-    provinces=new_dataframe["Province"].drop_duplicates().dropna().values.tolist()
+    languague=st.selectbox("Languague",["English","Chinese"])
+    schema_info={
+        "cn":{
+            "province":"省",
+            "city":"市",
+            "date":"日期"
+        },
+        "en":{
+            "province":"Province",
+            "city":"City",
+            "date":"date"
+        }
+    }
+
+    if languague=="English":
+        dataframe=pd.read_excel("demo_en.xlsx")
+        schema=schema_info["en"]
+    else:
+        dataframe=pd.read_excel("demo_cn.xlsx")
+        schema=schema_info["cn"]
+
+
+    new_dataframe=dataframe.replace(" ", np.nan)
+
+
+    provinces=new_dataframe[schema["province"]].drop_duplicates().dropna().values.tolist()
     province=st.selectbox("Province",provinces,index=None)
    
-    new_dataframe=dataframe[dataframe["Province"]==province].replace(" ", np.nan)
-    citys=new_dataframe["City"].drop_duplicates().dropna().values.tolist()
+    new_dataframe=dataframe[dataframe[schema["province"]]==province].replace(" ", np.nan)
+    citys=new_dataframe[schema["city"]].drop_duplicates().dropna().values.tolist()
     city=st.selectbox("City",citys)
 
 
-    new_dataframe=dataframe[(dataframe["Province"]==province)&(dataframe["City"]==city)].replace(" ", np.nan)
-    date=new_dataframe["date"].drop_duplicates().dropna().values.tolist()
+    new_dataframe=dataframe[(dataframe[schema["province"]]==province)&(dataframe[schema["city"]]==city)].replace(" ", np.nan)
+    date=new_dataframe[schema["date"]].drop_duplicates().dropna().values.tolist()
     date = [int(d) for d in date]
     date=sorted(date)
     start_date=st.selectbox("From",date)
 
 
-    new_dataframe=dataframe[(dataframe["Province"]==province)&(dataframe["City"]==city)].replace(" ", np.nan)
-    date=new_dataframe["date"].drop_duplicates().dropna().values.tolist()
-        
+    new_dataframe=dataframe[(dataframe[schema["province"]]==province)&(dataframe[schema["city"]]==city)].replace(" ", np.nan)
+    date=new_dataframe[schema["date"]].drop_duplicates().dropna().values.tolist()
+    
     date = [int(d) for d in date]
     date=sorted(date)
     if len(date) >5:
@@ -68,8 +92,11 @@ with st.sidebar:
     else:
         end_date=st.selectbox("To",date)
 
-analysis_data=dataframe[(dataframe["Province"]==province) & (dataframe["City"]==city) &((dataframe["date"]>=start_date)&(dataframe["date"]<=end_date))]
-analysis_data = analysis_data.sort_values(by='date', ascending=False)
+    
+
+
+analysis_data=dataframe[(dataframe[schema["province"]]==province) & (dataframe[schema["city"]]==city) &((dataframe[schema["date"]]>=start_date)&(dataframe[schema["date"]]<=end_date))]
+analysis_data = analysis_data.sort_values(by=schema["date"], ascending=False)
 
 
 def call_llm(province,city,data,question,memory):
@@ -81,7 +108,8 @@ def call_llm(province,city,data,question,memory):
         "province": province,
         "city":city,
         "data": data,
-        "question":question
+        "question":question,
+        "languague": languague
     })
     st.session_state.messages=memory.chat_memory.messages
 
