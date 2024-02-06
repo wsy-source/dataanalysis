@@ -11,7 +11,7 @@ from langchain.memory import ConversationBufferMemory
 from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
 prompt="""
-  As a regional sales manager for Goodyear,Need to answer user questions based on current regional sales data and chat history
+  As a regional sales manager for Goodyear,Need to answer user questions based on current regional sales data and chat history User questions must be answered
   answer in chinese
 
   user question: {question}
