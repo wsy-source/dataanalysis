@@ -39,12 +39,15 @@ if "memory" not in st.session_state:
 
 province=""
 city=""
-
-dataframe=pd.read_excel("tag-data.xlsx","Sheet2")
+sales_situation=""
+stock_situation=""
+price_situation=""
+visit_situation=""
+dataframe=pd.read_excel("test1280.xlsx","Sheet1")
 with st.sidebar:
     new_dataframe=dataframe.replace(" ", np.nan)  
     provinces=new_dataframe["省"].drop_duplicates().dropna().values.tolist()
-    province=st.selectbox("省",provinces,index=None)
+    province=st.selectbox("省",provinces)
    
     new_dataframe=dataframe[dataframe["省"]==province].replace(" ", np.nan)
     citys=new_dataframe["市"].drop_duplicates().dropna().values.tolist()
@@ -66,12 +69,34 @@ with st.sidebar:
     else:
         end_date=st.selectbox("To",date)
      
-    sales_situation=st.selectbox("销售情况",["好","一般","差"],index=None)
-    stock_situation=st.selectbox("库存情况",["好","一般","差"],index=None)
-    price_situation=st.selectbox("价格情况",["好","一般","差"],index=None)
-    visit_situation=st.selectbox("拜访描述",["好","一般","差"],index=None)
+    sales_situation=st.selectbox("销售情况",["好","N/A","差"],index=None)
+    stock_situation=st.selectbox("库存情况",["好","N/A","差"],index=None)
+    price_situation=st.selectbox("价格情况",["好","N/A","差"],index=None)
+    visit_situation=st.selectbox("拜访描述",["好","N/A","差"],index=None)
+    result=st.button("search")
 
-    analysis_data=dataframe[(dataframe["省"]==province) & (dataframe["市"]==city) &((dataframe["日期"]>=start_date)&(dataframe["日期"]<=end_date)) & (dataframe["销售情况"]==sales_situation) & (dataframe["库存情况"]==stock_situation) & (dataframe["价格情况"]==price_situation) & (dataframe["拜访描述"]==visit_situation)] 
+if result:
+    analysis_data=None
+    analysis_data=dataframe[(dataframe["省"]==province) & (dataframe["市"]==city) &((dataframe["日期"]>=start_date)&(dataframe["日期"]<=end_date))]
+    if sales_situation:
+        if sales_situation =="N/A":
+            analysis_data=analysis_data[dataframe["销售情况"].isna()]
+        else:
+            analysis_data=analysis_data[(dataframe["销售情况"]==sales_situation)]
+    if stock_situation:
+            if stock_situation =="N/A":
+                analysis_data=analysis_data[dataframe["库存情况"].isna()]
+            else:
+                analysis_data=analysis_data[(dataframe["库存情况"]==sales_situation)]
+    if price_situation:
+            if price_situation =="N/A":
+                 analysis_data=analysis_data[dataframe["价格情况"].isna()]
+            else:
+                analysis_data=analysis_data[(dataframe["价格情况"]==sales_situation)]
+    if visit_situation:
+            if visit_situation =="N/A":
+                analysis_data=analysis_data[dataframe["拜访描述"].isna()]
+            else:
+                analysis_data=analysis_data[(dataframe["拜访描述"]==sales_situation)]
     analysis_data = analysis_data.sort_values(by='日期', ascending=False)
-
-st.dataframe(analysis_data,width=3000)
+    st.dataframe(analysis_data,width=3000,height=800)
