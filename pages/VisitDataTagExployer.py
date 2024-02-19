@@ -87,16 +87,16 @@ if result:
             if stock_situation =="N/A":
                 analysis_data=analysis_data[dataframe["库存情况"].isna()]
             else:
-                analysis_data=analysis_data[(dataframe["库存情况"]==sales_situation)]
+                analysis_data=analysis_data[(dataframe["库存情况"]==stock_situation)]
     if price_situation:
             if price_situation =="N/A":
                  analysis_data=analysis_data[dataframe["价格情况"].isna()]
             else:
-                analysis_data=analysis_data[(dataframe["价格情况"]==sales_situation)]
+                analysis_data=analysis_data[(dataframe["价格情况"]==price_situation)]
     if visit_situation:
             if visit_situation =="N/A":
                 analysis_data=analysis_data[dataframe["拜访描述"].isna()]
             else:
-                analysis_data=analysis_data[(dataframe["拜访描述"]==sales_situation)]
+                analysis_data=analysis_data[(dataframe["拜访描述"]==visit_situation)]
     analysis_data = analysis_data.sort_values(by='日期', ascending=False)
     st.dataframe(analysis_data,width=3000,height=800)
