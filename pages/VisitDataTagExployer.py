@@ -46,7 +46,7 @@ with st.sidebar:
      
     sales_situation=st.selectbox("HasSalesProblem",["Yes","N/A","No"],index=None)
     stock_situation=st.selectbox("HasInventoryProblem",["Yes","N/A","No"],index=None)
-    point_situation=st.selectbox("HasViewPoint",["Yes","N/A","No"],index=None)
+    point_situation=st.selectbox("HasViewPoint",["Yes","No"],index=None)
     result=st.button("Search")
 
 if result:
