@@ -18,8 +18,13 @@ city=""
 sales_situation=""
 stock_situation=""
 price_situation=""
-dataframe=pd.read_excel("tag-all.xlsx","Sheet1")
+
+if st.session_state.get("data") is None:
+    dataframe=pd.read_excel("tag-all.xlsx","Sheet1")
+    st.session_state["data"]=dataframe
+    print(11111)
 with st.sidebar:
+    dataframe=st.session_state["data"]
     new_dataframe=dataframe.replace(" ", np.nan)  
     provinces=new_dataframe["Province"].drop_duplicates().dropna().values.tolist()
     province=st.selectbox("Province",provinces)
