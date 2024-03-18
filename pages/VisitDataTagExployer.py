@@ -20,34 +20,52 @@ stock_situation=""
 price_situation=""
 
 if st.session_state.get("data") is None:
-    dataframe=pd.read_excel("tag-all.xlsx","Sheet1")
+    dataframe=pd.read_excel("tag-cn.xlsx","Sheet1")
     st.session_state["data"]=dataframe
     print(11111)
 with st.sidebar:
     dataframe=st.session_state["data"]
     new_dataframe=dataframe.replace(" ", np.nan)  
-    provinces=new_dataframe["Province"].drop_duplicates().dropna().values.tolist()
+    provinces=new_dataframe["省"].drop_duplicates().dropna().values.tolist()
     province=st.selectbox("Province",provinces)
    
-    new_dataframe=dataframe[dataframe["Province"]==province].replace(" ", np.nan)
-    citys=new_dataframe["City"].drop_duplicates().dropna().values.tolist()
-    city=st.selectbox("City",citys)
+    new_dataframe=dataframe[dataframe["省"]==province].replace(" ", np.nan)
+    citys=new_dataframe["区"].drop_duplicates().dropna().values.tolist()
+    citys.append("All")
+    city=st.selectbox("City",citys,index=len(citys)-1)
 
-    new_dataframe=dataframe[(dataframe["Province"]==province)&(dataframe["City"]==city)].replace(" ", np.nan)
-    date=new_dataframe["date"].drop_duplicates().dropna().values.tolist()
-    date = [int(d) for d in date]
-    date=sorted(date)
-    start_date=st.selectbox("From",date)
+    if city != "All":
+        new_dataframe=dataframe[(dataframe["省"]==province)&(dataframe["区"]==city)].replace(" ", np.nan)
+        date=new_dataframe["日期"].drop_duplicates().dropna().values.tolist()
+        date = [int(d) for d in date]
+        date=sorted(date)
+        start_date=st.selectbox("From",date)
 
-    new_dataframe=dataframe[(dataframe["Province"]==province)&(dataframe["City"]==city)].replace(" ", np.nan)
-    date=new_dataframe["date"].drop_duplicates().dropna().values.tolist()
-        
-    date = [int(d) for d in date]
-    date=sorted(date)
-    if len(date) >5:
-        end_date=st.selectbox("To",date,index=5)
+        new_dataframe=dataframe[(dataframe["省"]==province)&(dataframe["区"]==city)].replace(" ", np.nan)
+        date=new_dataframe["日期"].drop_duplicates().dropna().values.tolist()
+            
+        date = [int(d) for d in date]
+        date=sorted(date)
+        if len(date) >5:
+            end_date=st.selectbox("To",date,index=5)
+        else:
+            end_date=st.selectbox("To",date)
     else:
-        end_date=st.selectbox("To",date)
+        new_dataframe=dataframe[(dataframe["省"]==province)].replace(" ", np.nan)
+        date=new_dataframe["日期"].drop_duplicates().dropna().values.tolist()
+        date = [int(d) for d in date]
+        date=sorted(date)
+        start_date=st.selectbox("From",date)
+
+        new_dataframe=dataframe[(dataframe["省"]==province)].replace(" ", np.nan)
+        date=new_dataframe["日期"].drop_duplicates().dropna().values.tolist()
+            
+        date = [int(d) for d in date]
+        date=sorted(date)
+        if len(date) >5:
+            end_date=st.selectbox("To",date,index=5)
+        else:
+            end_date=st.selectbox("To",date)
      
     sales_situation=st.selectbox("HasSalesProblem",["Yes","N/A","No"],index=None)
     stock_situation=st.selectbox("HasInventoryProblem",["Yes","N/A","No"],index=None)
@@ -56,21 +74,41 @@ with st.sidebar:
 
 if result:
     analysis_data=None
-    analysis_data=dataframe[(dataframe["Province"]==province) & (dataframe["City"]==city) &((dataframe["date"]>=start_date)&(dataframe["date"]<=end_date))]
-    if sales_situation:
-        if sales_situation =="N/A":
-            analysis_data=analysis_data[dataframe["HasSalesProblem"].isna()]
-        else:
-            analysis_data=analysis_data[(dataframe["HasSalesProblem"]==sales_situation)]
-    if stock_situation:
-            if stock_situation =="N/A":
-                analysis_data=analysis_data[dataframe["HasInventoryProblem"].isna()]
+    if city != "All":
+        analysis_data=dataframe[(dataframe["省"]==province) & (dataframe["区"]==city) &((dataframe["日期"]>=start_date)&(dataframe["日期"]<=end_date))]
+        if sales_situation:
+            if sales_situation =="N/A":
+                analysis_data=analysis_data[dataframe["HasSalesProblem"].isna()]
             else:
-                analysis_data=analysis_data[(dataframe["HasInventoryProblem"]==stock_situation)]
-    if point_situation:
-            if point_situation =="N/A":
-                 analysis_data=analysis_data[dataframe["HasViewPoint"].isna()]
+                analysis_data=analysis_data[(dataframe["HasSalesProblem"]==sales_situation)]
+        if stock_situation:
+                if stock_situation =="N/A":
+                    analysis_data=analysis_data[dataframe["HasInventoryProblem"].isna()]
+                else:
+                    analysis_data=analysis_data[(dataframe["HasInventoryProblem"]==stock_situation)]
+        if point_situation:
+                if point_situation =="N/A":
+                    analysis_data=analysis_data[dataframe["HasViewPoint"].isna()]
+                else:
+                    analysis_data=analysis_data[(dataframe["HasViewPoint"]==point_situation)]
+        analysis_data = analysis_data.sort_values(by='日期', ascending=False)
+        st.dataframe(analysis_data,width=3000,height=800)
+    else:   
+        analysis_data=dataframe[(dataframe["省"]==province)&((dataframe["日期"]>=start_date)&(dataframe["日期"]<=end_date))]
+        if sales_situation:
+            if sales_situation =="N/A":
+                analysis_data=analysis_data[dataframe["HasSalesProblem"].isna()]
             else:
-                analysis_data=analysis_data[(dataframe["HasViewPoint"]==point_situation)]
-    analysis_data = analysis_data.sort_values(by='date', ascending=False)
-    st.dataframe(analysis_data,width=3000,height=800)
+                analysis_data=analysis_data[(dataframe["HasSalesProblem"]==sales_situation)]
+        if stock_situation:
+                if stock_situation =="N/A":
+                    analysis_data=analysis_data[dataframe["HasInventoryProblem"].isna()]
+                else:
+                    analysis_data=analysis_data[(dataframe["HasInventoryProblem"]==stock_situation)]
+        if point_situation:
+                if point_situation =="N/A":
+                    analysis_data=analysis_data[dataframe["HasViewPoint"].isna()]
+                else:
+                    analysis_data=analysis_data[(dataframe["HasViewPoint"]==point_situation)]
+        analysis_data = analysis_data.sort_values(by='日期', ascending=False)
+        st.dataframe(analysis_data,width=3000,height=800)

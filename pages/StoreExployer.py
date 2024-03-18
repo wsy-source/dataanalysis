@@ -12,16 +12,17 @@ from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
 
 prompt="""
-  As a store sales manager for Goodyear, you need to analyze the content discussed based on the visit data to analyze Analyze the topics and details discussed in the interview data to answer user questions.
+  As the company's store sales manager, you need to analyze the content of discussions based on specific store visit data, analyze the topics and details discussed in the interview data, and answer users' questions.
   Use customer number instead of data number
-  
   The questions asked by users may not have direct answers（No need to repeat the statement）. 
-  You need to summarize them from the topics and detailed descriptions discussed in the interview data.
-  Just tell me the result of your answer
+  
+  Please Note:
+    1. Only data-related questions can be answered.
+    2. You are allowed to ask the user if the user's question is not clear
   
   user question: {question}
   current data: 
-  province: {province} city: {city} sales data 
+  customer number: {customerNumber}
   data: {data}
 
   answer in {languague}
@@ -48,7 +49,7 @@ with st.sidebar:
     schema_info={
         "cn":{
             "province":"省",
-            "city":"市",
+            "city":"区",
             "date":"日期"
         },
         "en":{
@@ -58,12 +59,9 @@ with st.sidebar:
         }
     }
 
-    if languague=="English":
-        dataframe=pd.read_excel("demo_en.xlsx",dtype={"a": np.int32, "b": str},converters={'Customer Number':str})
-        schema=schema_info["en"]
-    else:
-        dataframe=pd.read_excel("demo_cn.xlsx",dtype={"a": np.int32, "b": str},converters={'客户编号':str})
-        schema=schema_info["cn"]
+ 
+    dataframe=pd.read_excel("tag-cn.xlsx",dtype={"a": np.int32, "b": str},converters={'客户编号':str})
+    schema=schema_info["cn"]
 
 
     new_dataframe=dataframe.replace(" ", np.nan)
@@ -78,37 +76,24 @@ with st.sidebar:
 
 
     new_dataframe=dataframe[(dataframe[schema["province"]]==province)&(dataframe[schema["city"]]==city)].replace(" ", np.nan)
-    date=new_dataframe[schema["date"]].drop_duplicates().dropna().values.tolist()
-    date = [int(d) for d in date]
-    date=sorted(date)
-    start_date=st.selectbox("From",date)
-
-
-    new_dataframe=dataframe[(dataframe[schema["province"]]==province)&(dataframe[schema["city"]]==city)].replace(" ", np.nan)
-    date=new_dataframe[schema["date"]].drop_duplicates().dropna().values.tolist()
-    
-    date = [int(d) for d in date]
-    date=sorted(date)
-    if len(date) >5:
-        end_date=st.selectbox("To",date,index=5)
-    else:
-        end_date=st.selectbox("To",date)
-
+    customer_number=new_dataframe["客户编号"].drop_duplicates().dropna().values.tolist()
+   
+    customer_number=st.selectbox("客户编号",customer_number)
+ 
     
 
 
-analysis_data=dataframe[(dataframe[schema["province"]]==province) & (dataframe[schema["city"]]==city) &((dataframe[schema["date"]]>=start_date)&(dataframe[schema["date"]]<=end_date))]
+analysis_data=dataframe[(dataframe[schema["province"]]==province) & (dataframe[schema["city"]]==city) &(dataframe["客户编号"]==customer_number)]
 analysis_data = analysis_data.sort_values(by=schema["date"], ascending=False)
 
 
-def call_llm(province,city,data,question,memory):
-    llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,
+def call_llm(customerNumber,data,question,memory):
+    llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,temperature=0.3,
                           callbacks=[handler])
     
     chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
     chain.invoke(input={
-        "province": province,
-        "city":city,
+        "customerNumber": customerNumber,
         "data": data,
         "question":question,
         "languague": languague
@@ -133,6 +118,7 @@ if prompt := st.chat_input():
     st.dataframe(analysis_data)
     try:
         memory=st.session_state["memory"]
-        call_llm(question=prompt,city=city,data=data,province=province,memory=memory)        
+        call_llm(question=prompt,customerNumber=customer_number,memory=memory,data=data)        
     except Exception as e:
+        print(e.args.__str__())
         st.error("The token exceeds the maximum token supported by the model. Please reduce data input.")

@@ -12,13 +12,15 @@ from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
 
 prompt="""
-  As a regional sales manager for Goodyear, you need to analyze the content discussed based on the visit data to analyze Analyze the topics and details discussed in the interview data to answer user questions.
+  As a regional sales manager for Company, you need to analyze the content discussed based on the visit data to analyze Analyze the topics and details discussed in the interview data to answer user questions.
   Use customer number instead of data number
-  
+
   The questions asked by users may not have direct answers（No need to repeat the statement）. 
-  You need to summarize them from the topics and detailed descriptions discussed in the interview data.
-  Just tell me the result of your answer
   
+  Please Note:
+    1. Only data-related questions can be answered.
+    2. You are allowed to ask the user if the user's question is not clear
+
   user question: {question}
   current data: 
   province: {province} city: {city} sales data 
@@ -48,7 +50,7 @@ with st.sidebar:
     schema_info={
         "cn":{
             "province":"省",
-            "city":"市",
+            "city":"区",
             "date":"日期"
         },
         "en":{
@@ -58,12 +60,9 @@ with st.sidebar:
         }
     }
 
-    if languague=="English":
-        dataframe=pd.read_excel("demo_en.xlsx",dtype={"a": np.int32, "b": str},converters={'Customer Number':str})
-        schema=schema_info["en"]
-    else:
-        dataframe=pd.read_excel("demo_cn.xlsx",dtype={"a": np.int32, "b": str},converters={'客户编号':str})
-        schema=schema_info["cn"]
+ 
+    dataframe=pd.read_excel("tag-cn.xlsx",dtype={"a": np.int32, "b": str},converters={'客户编号':str})
+    schema=schema_info["cn"]
 
 
     new_dataframe=dataframe.replace(" ", np.nan)
@@ -102,7 +101,7 @@ analysis_data = analysis_data.sort_values(by=schema["date"], ascending=False)
 
 
 def call_llm(province,city,data,question,memory):
-    llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,
+    llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,temperature=0.3,
                           callbacks=[handler])
     
     chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
