@@ -10,6 +10,10 @@ from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 from callback.streamlit_callback import StreamHandler
 from langchain.prompts import PromptTemplate
+from openai import AzureOpenAI
+from openai.types.chat import ChatCompletion
+import time
+
 
 prompt="""
   As the company's store sales manager, you need to analyze the content of discussions based on specific store visit data, analyze the topics and details discussed in the interview data, and answer users' questions.
@@ -22,11 +26,20 @@ prompt="""
   
   user question: {question}
   current data: 
+
   customer number: {customerNumber}
-  data: {data}
+  Topic1: {topic1}
+  Detailed description 1: {description1}
+  Topic1: {topic2}
+  Detailed description 2: {description2}
+  HasSalesProblem: {HasSalesProblem}
+  HasInventoryProblem: {HasInventoryProblem}
+  HasViewPoint: {HasViewPoint}
 
   answer in {languague}
 """
+
+
 
 PROMPT=PromptTemplate.from_template(prompt)
 
@@ -36,8 +49,10 @@ st.set_page_config(layout="wide", page_icon="😊", page_title="Chat")
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
-if "memory" not in st.session_state:
-    st.session_state["memory"]=ConversationBufferMemory(memory_key="history",return_messages=True,input_key="question")
+if "example_messages" not in st.session_state:
+    st.session_state["example_messages"] = [
+        {"role":"system","content":"As the company's store sales manager, you need to analyze the content of discussions based on specific store visit data, analyze the topics and details discussed in the interview data, and answer users' questions. \n use customer number instead of data number \n The questions asked by users may not have direct answers（No need to repeat the statement. \n You are allowed to ask the user if the user's question is not clear"}
+    ]
 
 province=""
 city=""
@@ -87,38 +102,63 @@ analysis_data=dataframe[(dataframe[schema["province"]]==province) & (dataframe[s
 analysis_data = analysis_data.sort_values(by=schema["date"], ascending=False)
 
 
-def call_llm(customerNumber,data,question,memory):
-    llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,temperature=0.3,
-                          callbacks=[handler])
-    
-    chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
-    chain.invoke(input={
-        "customerNumber": customerNumber,
-        "data": data,
-        "question":question,
-        "languague": languague
-    })
+def call_llm(data,question,memory):
+    # llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,temperature=0.3,
+    #                       callbacks=[handler])
+
+    st.write_stream
+    # chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
+    # chain.invoke(input={
+    #     "customerNumber": customerNumber,
+    #     "data": data,
+    #     "question":question,
+    #     "languague": languague
+    # })
+
     st.session_state.messages=memory.chat_memory.messages
 
 
 
 for msg in st.session_state.messages:
+    st.chat_message(msg["role"]).write(msg["content"])
 
-    if type(msg) == HumanMessage:
-        st.chat_message("user").write(msg.content)
-    if type(msg) == AIMessage:
-        st.chat_message("assistant").write(msg.content)
-        
+
+
+
+
+def generate(response:ChatCompletion):
+    for chunk in response:
+        if chunk.choices:
+            delta = chunk.choices[0].delta
+            if delta and delta.content:
+                yield delta.content
+                time.sleep(0.03)
 
 
 if prompt := st.chat_input():
-    st.chat_message("user").write(prompt)
-    data=analysis_data.to_string()
-    handler = StreamHandler(st.empty())
-    st.dataframe(analysis_data)
+
     try:
-        memory=st.session_state["memory"]
-        call_llm(question=prompt,customerNumber=customer_number,memory=memory,data=data)        
+        if analysis_data.empty:
+            st.warning("No data found for this customer. Please select filter criteria in the left menu 👈")
+        else:
+            st.chat_message("user").write(prompt)
+            # handler = StreamHandler(st.empty())
+            client = AzureOpenAI()
+            st.session_state.messages.append({"role":"user","content":prompt})
+            messages = st.session_state.example_messages + st.session_state.messages
+            all_data = analysis_data.to_dict(orient="records")
+            messages.append({"role":"user", "content":f"answer question in {languague}"})
+            messages.append({"role":"system", "content":all_data.__str__()})
+            response = client.chat.completions.create(
+                model="gpt-4106",
+                stream=True,
+                temperature=0.3,
+                messages=messages,
+            )
+            result = st.chat_message("assistant").write_stream(generate(response))
+            data=analysis_data.to_string()
+            st.dataframe(analysis_data)
+            st.session_state.messages.append({"role":"assistant", "content":result})
     except Exception as e:
         print(e.args.__str__())
         st.error("The token exceeds the maximum token supported by the model. Please reduce data input.")
