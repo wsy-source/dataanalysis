@@ -99,8 +99,9 @@ def generate(response:ChatCompletion):
         if chunk.choices:
             delta = chunk.choices[0].delta
             if delta and delta.content:
+                time.sleep(0.030)
                 yield delta.content
-                time.sleep(0.015)
+                
 
 
 if prompt := st.chat_input():
