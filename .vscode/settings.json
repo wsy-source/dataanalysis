@@ -30,6 +30,6 @@
         "venv.bak{,/**}",
         ".vscode{,/**}"
     ],
-    "appService.defaultWebAppToDeploy": "/subscriptions/6015df2b-244a-424f-8d75-5aad1eee0020/resourceGroups/RG-WSY-TRANING/providers/Microsoft.Web/sites/capdata",
+    "appService.defaultWebAppToDeploy": "",
     "appService.deploySubpath": "."
 }

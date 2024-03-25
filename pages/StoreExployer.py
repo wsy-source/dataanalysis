@@ -15,34 +15,6 @@ from openai.types.chat import ChatCompletion
 import time
 
 
-prompt="""
-  As the company's store sales manager, you need to analyze the content of discussions based on specific store visit data, analyze the topics and details discussed in the interview data, and answer users' questions.
-  Use customer number instead of data number
-  The questions asked by users may not have direct answers（No need to repeat the statement）. 
-  
-  Please Note:
-    1. Only data-related questions can be answered.
-    2. You are allowed to ask the user if the user's question is not clear
-  
-  user question: {question}
-  current data: 
-
-  customer number: {customerNumber}
-  Topic1: {topic1}
-  Detailed description 1: {description1}
-  Topic1: {topic2}
-  Detailed description 2: {description2}
-  HasSalesProblem: {HasSalesProblem}
-  HasInventoryProblem: {HasInventoryProblem}
-  HasViewPoint: {HasViewPoint}
-
-  answer in {languague}
-"""
-
-
-
-PROMPT=PromptTemplate.from_template(prompt)
-
 st.set_page_config(layout="wide", page_icon="😊", page_title="Chat")
 # st.title('🔗 Chat With Data')
 
@@ -102,20 +74,6 @@ analysis_data=dataframe[(dataframe[schema["province"]]==province) & (dataframe[s
 analysis_data = analysis_data.sort_values(by=schema["date"], ascending=False)
 
 
-def call_llm(data,question,memory):
-    # llm = AzureChatOpenAI(azure_deployment="gpt-4106",streaming=True,temperature=0.3,
-    #                       callbacks=[handler])
-
-    st.write_stream
-    # chain=LLMChain(llm=llm,memory=memory,prompt=PROMPT)
-    # chain.invoke(input={
-    #     "customerNumber": customerNumber,
-    #     "data": data,
-    #     "question":question,
-    #     "languague": languague
-    # })
-
-    st.session_state.messages=memory.chat_memory.messages
 
 
 
@@ -154,6 +112,7 @@ if prompt := st.chat_input():
                 stream=True,
                 temperature=0.3,
                 messages=messages,
+                max_tokens=1000 
             )
             result = st.chat_message("assistant").write_stream(generate(response))
             data=analysis_data.to_string()

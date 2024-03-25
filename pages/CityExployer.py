@@ -99,8 +99,8 @@ def generate(response:ChatCompletion):
         if chunk.choices:
             delta = chunk.choices[0].delta
             if delta and delta.content:
-                time.sleep(0.030)
                 yield delta.content
+                time.sleep(0.20)
                 
 
 
@@ -123,6 +123,7 @@ if prompt := st.chat_input():
                 stream=True,
                 temperature=0.3,
                 messages=messages,
+                max_tokens=1000 
             )
             result = st.chat_message("assistant").write_stream(generate(response))
             data=analysis_data.to_string()
